@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大数据可视化项目开发教程</title>
+    <style>
+        :root {
+            --primary-color: #1890ff;
+            --secondary-color: #40a9ff;
+            --accent-color: #f5222d;
+            --text-color: #262626;
+            --light-text: #595959;
+            --lighter-text: #8c8c8c;
+            --border-radius: 8px;
+            --box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: 
+                linear-gradient(120deg, rgba(24, 144, 255, 0.05) 0%, transparent 70%),
+                linear-gradient(240deg, rgba(64, 169, 255, 0.05) 0%, transparent 70%),
+                linear-gradient(145deg, #f0f2f5 0%, #e6e9ec 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            gap: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 4px 20px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.02);
+        }
+
+        .book-left {
+            flex: 0 0 300px;
+            text-align: center;
+        }
+
+        .book-cover {
+            margin-bottom: 20px;
+        }
+
+        .book-cover img {
+            width: 100%;
+            border-radius: var(--border-radius);
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.1),
+                0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .book-cover img:hover {
+            transform: translateY(-5px);
+            box-shadow: 
+                0 8px 20px rgba(0, 0, 0, 0.12),
+                0 3px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .official-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(145deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .official-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(24, 144, 255, 0.4);
+        }
+
+        .official-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+            transform: scale(0);
+            opacity: 0;
+            transition: transform 0.6s, opacity 0.6s;
+        }
+
+        .official-btn:hover::after {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .book-info {
+            flex: 1;
+        }
+
+        .book-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0 0 8px 0;
+        }
+
+        .book-subtitle {
+            font-size: 16px;
+            color: var(--light-text);
+            margin-bottom: 12px;
+        }
+
+        .isbn {
+            font-size: 14px;
+            color: var(--lighter-text);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .info-section {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .info-section:hover {
+            background: white;
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.02);
+        }
+
+        .info-section h3 {
+            font-size: 16px;
+            color: var(--primary-color);
+            margin: 0 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e8e8e8;
+        }
+
+        .info-section p {
+            margin: 8px 0;
+            color: var(--light-text);
+            font-size: 14px;
+        }
+
+        .info-content {
+            max-height: 150px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .info-content.expanded {
+            max-height: 1000px;
+            padding-bottom: 30px;
+        }
+
+        .expand-btn {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 30px 20px 10px;
+            text-align: center;
+            background: linear-gradient(transparent, #fafafa 40%);
+            cursor: pointer;
+            color: var(--primary-color);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .info-section.expanded .expand-btn {
+            background: #fafafa;
+            padding: 10px 20px;
+        }
+
+        .expand-btn:hover {
+            color: var(--secondary-color);
+        }
+
+        .expand-btn::after {
+            content: '展开';
+        }
+
+        .info-section.expanded .expand-btn::after {
+            content: '收起';
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .book-left {
+                flex: none;
+                max-width: 240px;
+                margin: 0 auto;
+            }
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .price-section {
+            margin: 12px 0;
+            font-size: 28px;
+            color: #f5222d;
+            display: flex;
+            align-items: center;
+        }
+
+        .price-symbol {
+            font-size: 16px;
+            margin-right: 4px;
+        }
+
+        .original-price {
+            font-size: 14px;
+            color: var(--lighter-text);
+            text-decoration: line-through;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .sample-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #52c41a;
+            color: white;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .sample-btn:hover {
+            background: #73d13d;
+            transform: translateY(-2px);
+        }
+
+        .social-stats {
+            display: flex;
+            gap: 16px;
+            margin: 12px 0;
+            color: var(--light-text);
+            font-size: 14px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: default;
+        }
+
+        .stat-item.share {
+            cursor: pointer;
+        }
+
+        .stat-item.share:hover {
+            color: var(--primary-color);
+        }
+
+        .stat-item i {
+            font-size: 16px;
+            color: inherit;
+        }
+
+        @font-face {
+            font-family: 'iconfont';
+            src: url('//at.alicdn.com/t/font_8d5l8fzk5b87iudi.woff') format('woff');
+        }
+
+        .icon {
+            font-family: "iconfont" !important;
+            font-style: normal;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .book-preface {
+            margin-top: 20px;
+            text-align: left;
+            position: relative;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--light-text);
+            max-height: 180px;
+            overflow: hidden;
+            padding: 15px 20px;
+            background: linear-gradient(145deg, #f8f9fa, #ffffff);
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-color);
+            box-shadow: 
+                inset 0 2px 4px rgba(0,0,0,0.02),
+                0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .book-preface::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(
+                transparent,
+                rgba(248, 249, 250, 0.8) 60%,
+                rgba(248, 249, 250, 0.95) 80%,
+                rgba(248, 249, 250, 1) 100%
+            );
+            pointer-events: none;
+        }
+
+        .book-preface p {
+            margin: 8px 0;
+            text-indent: 2em;
+            position: relative;
+            z-index: 1;
+        }
+
+        .book-preface-title {
+            font-size: 16px;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .book-preface-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .book-preface-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .book-preface-decoration {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            width: 40px;
+            height: 40px;
+            opacity: 0.1;
+            background: var(--primary-color);
+            border-radius: 50%;
+        }
+
+        .book-preface-decoration::before {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: -10px;
+            width: 20px;
+            height: 20px;
+            background: var(--secondary-color);
+            border-radius: 50%;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle at top right, 
+                rgba(24, 144, 255, 0.03) 0%, 
+                transparent 70%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="toast" id="toast"></div>
+
+    <div class="container">
+        <div class="book-left">
+            <div class="book-cover">
+                <img src="fengmian.png" alt="大数据可视化项目开发教程封面">
+            </div>
+            <a href="http://www.crtvup.com.cn" class="official-btn">跳转官网</a>
+            <div class="book-preface">
+                <div class="book-preface-decoration"></div>
+                <div class="book-preface-title">前言</div>
+                <div class="book-preface-content">
+                    <p>如今，大数据技术已经成为了各行各业的核心竞争力之一。随着数据量的增大和数据来源的多样化，越来越多的企业和其他组织开始采用大数据技术来解决各种实际问题。因此，学习和掌握大数据技术已经成为了一种必要的选择。大数据技术涵盖了大数据开发环境部署与配置、数...据采集、数据开发、数据可视化设计等多方面内容。</p>
+
+                    <p>本书是一本校企合作开发的教材。在本书的编写过程中，我们充分发挥了学校和企业各自的优势，采用了最新的技术标准，以及自身多年的大数据实践经验，力求为读者呈现一本通俗易懂、实用性强、理论与实践相结合的教材。</p>
+
+                    <p>本书根据企业级大数据开发过程，通过案例详细介绍大数据开发各阶段的目标、开发工具、开发方法和开发结果，开发过程贯穿大数据价值、大数据开发环境部署、数据采集、数据开发、数据可视化，最后通过一个完整案例对前面几个模块进行回顾与总结，加深了读者对大数据可视化项目开发的理解和掌握。书中采用刘备与诸葛亮的角色设置，其对话幽默诙谐，使读者在轻松的对话中学习掌握专业术语。</p>
+
+                    <p>本书主要分为六个模块。模块一为大数据的概念及发展背景，主要介绍了大数据的基础知识、数据库的分类、生活中大数据技术应用案例，以及大数据的开发流程和环境准备；模块二为大数据开发环境部署与配置，主要介绍了大数据开发平台的功能、平台搭建所需的服务器资源和资源包，以及平台部署和配置过程；模块三为数据采集与应用，主要介绍了数据采集的概念、数据采集的工具、数据采集的常用场景、数据采集的常见存储方式，并通过案例演示了实际的数据采集操作；模块四为数据开发与应用，主要介绍了数据开发常用工具、数据库SQL语法、Hive SQL语法，并通过数据开发实例演示了实际的应用；模块五为数据可视化设计与应用，主要介绍了数据可视化的概念、数据可视化技术对比、数据可视化图形选择。</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="book-info">
+            <h1 class="book-title">大数据可视化项目开发教程</h1>
+            <div class="book-subtitle">DASHUJU KESHIHUA XIANGMU KAIFA JIAOCHENG</div>
+            
+            <div class="price-section">
+                <span class="price-symbol">¥</span>
+                <span>53.00</span>
+            </div>
+
+            <div class="social-stats">
+                <div class="stat-item">
+                    <i class="icon">👁️</i>
+                    <span>浏览 1.1k</span>
+                </div>
+                <div class="stat-item">
+                    <i class="icon">👍</i>
+                    <span>推荐 245</span>
+                </div>
+                <div class="stat-item">
+                    <i class="icon">⭐</i>
+                    <span>收藏 89</span>
+                </div>
+                <div class="stat-item share" onclick="shareUrl()">
+                    <i class="icon">↗️</i>
+                    <span>分享</span>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <a href="#" class="sample-btn">申请样书</a>
+            </div>
+
+            <div class="isbn">ISBN：978-7-304-11851-8</div>
+            
+            <div class="info-grid">
+                <div class="info-section">
+                    <h3>基本信息</h3>
+                    <div class="info-content">
+                        <p>主编：李涛、向春枝、李冬梅</p>
+                        <p>出版社：国家开放大学出版社·北京</p>
+                        <p>出版时间：2023年8月第1版</p>
+                        <p>印刷时间：2023年8月第1次印刷</p>
+                        <p>开本：787mm×1092mm 1/16</p>
+                        <p>印张：24.75</p>
+                        <p>字数：550千字</p>
+                        <p>定价：53.00元</p>
+                    </div>
+                    <div class="expand-btn"></div>
+                </div>
+
+                <div class="info-section">
+                    <h3>适用对象与特色</h3>
+                    <div class="info-content">
+                        <p>• 大数据可视化相关专业学生</p>
+                        <p>• 高校相关专业教学资源</p>
+                        <p>• 零基础入门学习者</p>
+                        <p>• 内容涵盖数据可视化全过程</p>
+                        <p>• 提供配套教学资源</p>
+                        <p>• 包含丰富的实践案例</p>
+                    </div>
+                    <div class="expand-btn"></div>
+                </div>
+
+                <div class="info-section">
+                    <h3>编辑团队</h3>
+                    <div class="info-content">
+                        <p>策划编辑：唐华</p>
+                        <p>版式设计：何智杰</p>
+                        <p>责任编辑：刘慧、唐华</p>
+                        <p>责任校对：宋翔月</p>
+                        <p>责任印制：武鹏、沙烁</p>
+                        <p>经销：新华书店北京发行所</p>
+                    </div>
+                    <div class="expand-btn"></div>
+                </div>
+
+                <div class="info-section">
+                    <h3>联系方式</h3>
+                    <div class="info-content">
+                        <p>地址：北京市海淀区西四环中路5号</p>
+                        <p>邮编：100039</p>
+                        <p>电话：营销中心 010-68180820</p>
+                        <p>总编室：010-68182524</p>
+                        <p>网址：www.crtvup.com.cn</p>
+                        <p>意见及建议：OUCP_ZYJY@ouchn.edu.cn</p>
+                    </div>
+                    <div class="expand-btn"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.expand-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const section = btn.parentElement;
+                section.classList.toggle('expanded');
+                const content = section.querySelector('.info-content');
+                content.classList.toggle('expanded');
+            });
+        });
+
+        function shareUrl() {
+            const url = 'www.hnkf.com';
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('链接已复制到剪贴板');
+            }).catch(() => {
+                showToast('复制失败，请手动复制');
+            });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
